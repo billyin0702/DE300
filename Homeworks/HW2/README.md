@@ -14,21 +14,10 @@ If anything related to docker.sock and says permission denied, try running the f
 sudo chmod 666 /var/run/docker.sock 
 ```
 
-# Buildg images
-If you have not built the images, you can do so by running the following commands...
-```
-docker build -t my_jupyter .
-```
-
 # Start up the services
 When starting up the services, please run the following commands
 ```
-chmod +x start_network.sh
-chmod +x start_mysql.sh
 chmod +x start_code.sh
-
-./start_network.sh
-./start_mysql.sh
 ```
 
 When all is done, please start the code docker container...
