@@ -1,4 +1,5 @@
 # Lab 6 Assignment
+NOTE: As per the TA's instructions, a short write up has been written inside the [EXPLAIN.md](Explain.md) file.
 
 ## Word Count
 1 Save only the words that have count greater or equal to 3.
