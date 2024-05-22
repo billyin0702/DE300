@@ -1,5 +1,5 @@
 # Lab Writeup
-All the code are in the [classify.py](ml/classify.py) file. In order to run the service, perform the following steps:
+All the code are in the [classify.py](ml/classify.py) file. The numTree argument was added as part of testing. In order to run the service, perform the following steps:
 
 # Results
 ```
