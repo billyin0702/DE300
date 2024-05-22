@@ -135,16 +135,22 @@ def pipeline(data: DataFrame):
 
     # Evaluate the model
     auc = evaluator.evaluate(predictions)
-    print(f"Area Under ROC Curve: {auc:.4f}")
 
     # Get the best RandomForest model
     best_model = cvModel.bestModel.stages[-1]
 
     # Retrieve the selected maximum tree depth
     selected_max_depth = best_model.getOrDefault(best_model.getParam("maxDepth"))
+    selected_num_trees = best_model.getOrDefault(best_model.getParam("numTrees"))
 
     # Print the selected maximum tree depth
+    print()
+    print("##################### Results #####################")
+    print(f"Area Under ROC Curve: {auc:.4f}")
     print(f"Selected Maximum Tree Depth: {selected_max_depth}")
+    print(f"Selected Number of Trees: {selected_num_trees}")
+    print("##################################################")
+    print()
 
 def main():
     # Create a Spark session

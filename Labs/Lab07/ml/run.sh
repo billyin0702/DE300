@@ -1,4 +1,4 @@
-docker run -v /home/ubuntu/Documents/DE300/lab_doc/lab7/ml:/tmp/ml -it \
+docker run -v "$(pwd)":/tmp/ml -it \
            -p 8888:8888 \
-           --name spark-sql-container \
-	   pyspark-image
+           --name pyspark-lab07-container \
+	    pyspark-lab07-image
