@@ -38,5 +38,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
 EXPOSE 8888
 
 # Configure the container to run Jupyter Notebook, disable token authentication for ease of use in non-production environments
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
+# CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''"]
 
+# Start shell to run the script manually
+CMD ["/bin/bash"]
