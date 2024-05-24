@@ -11,7 +11,7 @@ if __name__ == "__main__":
     spark.sparkContext.setLogLevel("ERROR")
     
     print("Reading data")
-    textFile = spark.read.csv("s3://spark-on-aws/sample.csv", header = True)
+    textFile = spark.read.csv("s3://spark-on-aws/heart_disease.csv", header = True)
     print("Read data!")
     samples = textFile.sample(.01, False, 42)
     print("Took sample!")

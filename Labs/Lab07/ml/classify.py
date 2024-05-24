@@ -146,6 +146,15 @@ def pipeline(data: DataFrame):
     # Print the selected maximum tree depth
     print()
     print("##################### Results #####################")
+    print("Misc info")
+    print(imputed_columns_numeric)
+    print("types")
+    for f in imputed_columns_numeric:
+        print(f"{f}: {type(f)}")
+    print(numeric_features)
+    print("types")
+    for f in numeric_features:
+        print(f"{f}: {type(f)}")
     print(f"Area Under ROC Curve: {auc:.4f}")
     print(f"Selected Maximum Tree Depth: {selected_max_depth}")
     print(f"Selected Number of Trees: {selected_num_trees}")

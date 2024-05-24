@@ -1,0 +1,1 @@
+docker build -t hw3_spark_image .
