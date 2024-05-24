@@ -20,4 +20,5 @@ cd main_folder
 ```
 
 ## 2. Running the service on AWS EMR
+The current cluster that had my steps working is ```byhw3-c2```.
 When using EMR Linux 2, the versino of openSSL supported on the proposed 6.10 versions will not work as they will have openSSL version 1.1.0. For the requests package to work on Python, it has to be 1.1.1+ at least. So, use a higher version of EMR will help.
