@@ -1,4 +1,4 @@
-# Homework 3 Readme
+# Homework 3 Explanations
 All relevant code will be inside [hw3_process.py](hw3_process.py), from data reading to data cleaning. The logic for cleaning will be the same as Homework 2, they will be listed below.
 
 # 1. Data Cleaning
