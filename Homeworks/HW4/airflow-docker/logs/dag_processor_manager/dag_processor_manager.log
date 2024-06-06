@@ -21865,3 +21865,74 @@ File Path                          PID    Runtime      # DAGs    # Errors  Last 
 [2024-06-06T15:43:16.996+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
 [2024-06-06T15:43:18.016+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
 [2024-06-06T15:43:18.022+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:19.036+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:19.041+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:20.057+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:20.063+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:21.078+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:21.083+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:22.104+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:22.114+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:23.137+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:23.146+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:24.168+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:24.174+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:25.192+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:25.199+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:26.224+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:26.232+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:27.251+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:27.258+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:28.279+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:28.284+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:29.300+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:29.305+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:30.335+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:30.345+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:30.606+0000] {manager.py:879} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                          PID    Runtime      # DAGs    # Errors  Last Runtime    Last Run
+---------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/test_airflow.py                           1           0  0.27s           2024-06-06T15:43:29
+/opt/airflow/dags/path1.py                                  1           0  0.58s           2024-06-06T15:43:13
+================================================================================
+[2024-06-06T15:43:31.364+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:31.371+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:32.394+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:32.401+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:33.426+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:33.435+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:34.458+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:34.465+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:35.489+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:35.497+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:36.519+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:36.524+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:37.542+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:37.550+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:38.571+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:38.579+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:39.603+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:39.613+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:40.633+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:40.642+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:41.667+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:41.672+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:42.695+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:42.703+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:43.735+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:43.743+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:44.769+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:44.775+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:45.795+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:45.803+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:46.822+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:46.827+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:47.844+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:47.851+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:48.874+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:48.881+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags
+[2024-06-06T15:43:49.905+0000] {manager.py:738} INFO - Searching for files in /opt/airflow/dags
+[2024-06-06T15:43:49.909+0000] {manager.py:741} INFO - There are 2 files in /opt/airflow/dags

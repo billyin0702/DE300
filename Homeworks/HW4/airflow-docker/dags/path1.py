@@ -30,10 +30,6 @@ def read_config_from_s3(client) -> dict:
 ############################### Global Variables ###############################
 # S3 Client
 # For local testing
-aws_access_key_id = "ASIAYAAO5HRMAIYX3HGA"
-aws_secret_access_key = "HT7/YLW/ikZUmg0WiU5Hp+ZANj9zWPZk3EaHD6bH"
-aws_session_token = "IQoJb3JpZ2luX2VjEEwaCXVzLWVhc3QtMiJIMEYCIQCRyC0Z2Nm8JT/wSq2gHEr0jdSnnwx3L2ZmIiV4hvRzewIhAKIYC8qa9y/AzjcpHYuHp460yXJgZnvBp+7jCyk7bxTVKvQCCNX//////////wEQABoMNTQ5Nzg3MDkwMDA4IgxtcatchuMJUYz6QMsqyAJ0cBIAV1MhAF/MjtY+BxvE3Tw8emR6WeBfotiwEKjzFMhPlJemFJ2a/p95/nFH99tFcvo0sw2f/vDTLJPJdtzs853ok/jVDYX/5SPF+pkoNQOdnfl7rQSid5hJCELwyj6whbDr1Ny9pbJcziMGAOIupQll5lX4sDzbRQ97SlyeSGQblQdaJdAzI/TqkhuLcXspYuZSeopFacG3uxgVxtEXX2dmuX+Y7yw0xO0ww0zhgI+FXbswWV88CTxO4oohIzg22+sISxsdxZxsjLbrYETwIMLbxPZKVVico7uSHd5FUIRZZUDH25JSIobooRisxu8MZf7EG7Alz9/TWZ2GRy1lyd8rzicobWYEHuEaIhjf1zv4H0nhTfvHm33Czjw6MOqD/2OK4xnFqfy1z72YkTBmP8q2N3as4CuhCH3knu9waHbIHGhTab9rMPjChrMGOqYBA5Ct8CalXn/CLhvnhO9LIYwXzJCQV38QcLAgOVtY7HyRk+U0fGts81ANNmdCXhB4CQAofEI95FiFwONsj0gK13xMfi7gq+gvL4K2gIhVIZ+eK4pTgdF2+LP9ZcFU4TcuyyUadGR+jyc/ZdogVaNbnl3BCF3v3GLO5NueqP64JsqKawepsFW1W/BWHtcH+gKnM+K2HHLyVuxVYZCn4EnZH7SXOkYVkQ=="
-
 S3C = boto3.client('s3',
                         aws_access_key_id=aws_access_key_id,
                         aws_secret_access_key=aws_secret_access_key,
