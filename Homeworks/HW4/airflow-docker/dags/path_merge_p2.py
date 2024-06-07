@@ -32,14 +32,8 @@ def read_config_from_s3(client) -> dict:
 ########################################################################################
 # S3 Client
 # For local testing
-aws_access_key_id="ASIAYAAO5HRMGZC4OZO7"
-aws_secret_access_key="JRTi+SHnSbWWYQ7oAgzWTbPlJaiZ9X7sPDxVpjVT"
-aws_session_token="IQoJb3JpZ2luX2VjEGkaCXVzLWVhc3QtMiJHMEUCIQCU/UkGXx5wUm9w1WdkK+HVEeiEkAzra1OY+PLeqij5ygIgOqE2vWQP1U6osQ7TJkVMBduw9o3hYJV+hM7Tw+aCHKAq9AII8v//////////ARAAGgw1NDk3ODcwOTAwMDgiDDiZVLEeE+AMOqGmLirIArjtIPvvwpBzzUYgN34oB9GSALP/9KzOvfZYhrDz7Hgb1zEbD2FiHnTEZ50qW3nQt7Eelt2xmpMpiI4FPIsrqSg/F4o4tkHYfUJexnvpsYA6u/0hYTuPqbmIkm5R3LA5IoxMbtD+/5d8Xc7YKFQnQ9FH1FFO4U4qMTtikV0hnR6TfoopQ8HGznZacn46avkqGrbrVW5Nmt8m+bt53uFEqd9XNxTSV7wjkBbcNHnx69oVillmWHtIUYBMKSkl/TmB6Tpm6tHY8ksitM7L2a8m2gBahbJ51/ipmh3gVLlNi9Ooe5wrecybaM+f0wt0s9CCm0l9yisYvJdNlDpYaRueHo27Uz+e51llK/Qoeo/iuFKEeErdot5xmCZHHAkX+X7d8TGPGu0WJFE4Bb+7l6UTF+aLsqBSQEL+a86E954LJyU/nNJ1U4sp7hAwqviMswY6pwFVNLdfGic2vjUSPKJPVC2+hJA1q07fmDf1PuTMo1hpepgEOpl6gJYx9fzlsgCpm1DbuWUp+m5wYKYjv5+761AyX2IFCLJc3TxImf/Z3Nej/1FI3MmqmZAv5SXOfOnwFZdlJVU/nZCuxzhwrBP9b3dArcY2S3cKW+Pi1L4qFXfeZRkuqBmx5OSPMywrft8OoFClG0KYnWwLJmjBwgKyOXfW93cNfpC5Iw=="
 
-S3C = boto3.client('s3',
-                        aws_access_key_id=aws_access_key_id,
-                        aws_secret_access_key=aws_secret_access_key,
-                        aws_session_token=aws_session_token)
+S3C = boto3.client('s3', region_name='us-east-2')
 
 EMRC = boto3.client('emr', region_name='us-east-2',
                         aws_access_key_id=aws_access_key_id,
