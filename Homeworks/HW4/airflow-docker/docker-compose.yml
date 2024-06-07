@@ -5,7 +5,7 @@ services:
     environment:
       - POSTGRES_USER=pgde300
       - POSTGRES_PASSWORD=de300spring2024
-      - POSTGRES_DB=demo_wine
+      - POSTGRES_DB=heart_disease_master
     ports:
       - "5432:5432"
 
@@ -17,7 +17,7 @@ services:
       - postgres
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://pgde300:de300spring2024@postgres/demo_wine
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://pgde300:de300spring2024@postgres/heart_disease_master
       - AIRFLOW__CORE__FERNET_KEY=81HqDtbqAywHKmMiEtTOE5fovV9zG2TImjuvs1PKlzM=
       - AIRFLOW__CORE__LOAD_EXAMPLES=True
       - _AIRFLOW_WWW_USER_USERNAME=airflow
@@ -40,7 +40,7 @@ services:
       - webserver
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://pgde300:de300spring2024@postgres/demo_wine
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://pgde300:de300spring2024@postgres/heart_disease_master
       - AIRFLOW__CORE__FERNET_KEY=81HqDtbqAywHKmMiEtTOE5fovV9zG2TImjuvs1PKlzM=
       - AIRFLOW__WEBSERVER__SECRET_KEY=OGS8ezxxkf0HcMlwKHiKXk9R5eb2U3F8Fb9LLIknUEU
       - AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL=1

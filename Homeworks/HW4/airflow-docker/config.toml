@@ -3,22 +3,17 @@ workflow_schedule_interval = "@daily"
 sequential_queue = "sequential"
 default_queue = "general"
 
-[db]
-endpoint = "billyin-hw4-pub-acc-3.cvwhaidrmrqj.us-east-2.rds.amazonaws.com"
-username = 'pgde300'
-password = 'de300spring2024'
-host = 'postgres'
-port = '5432'  # Default port for PostgreSQL
-default_db = 'postgres'  # Default database you can connect to
-defined_db_name = "heart_disease_master"
-table_name_p1 = 'heart_disease_p1'
-table_name_p2 = 'heart_disease_p2'
-table_name_merge = 'heart_disease_merge'
-db_alchemy_driver = "postgresql+psycopg2"
-
-[s3]
+[aws]
 bucket = "de300spring2024-billyin"
 data_key = "heart_disease.csv"
+p2_data_folder = "steps_data/p2"
+merge_data_folder = "steps_data/merge"
+merge_1 = "merge_step_1.py"
+merge_2 = "merge_step_2.py"
+p2_1 = "p2_step_1.py"
+p2_2 = "p2_step_2.py"
+cluster_emr = "j-2QP6PP3HGN9XC"
+cluster_emr_merge = "j-XH79FJ3V1KZP"
 
 
 [ml]
