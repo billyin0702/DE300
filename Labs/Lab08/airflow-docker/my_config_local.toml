@@ -8,14 +8,14 @@ db_identifier = "billyin-lab8-db"
 db_connection = "AIRFLOW_CONN_AWS_RDS_POSTGRES"
 username = 'pgde300'
 password = 'de300spring2024'
-host = 'billyin-lab8-db.cvwhaidrmrqj.us-east-2.rds.amazonaws.com'
+host = 'postgres'
 port = '5432'  # Default port for PostgreSQL
 default_db = 'postgres'  # Default database you can connect to
 db_name = 'demo_wine'
 db_alchemy_driver = "postgresql+psycopg2"
 
 [files]
-s3_bucket = "de300spring2024"
+s3_bucket = "s3://de300spring2024"
 s3_file_key = "billyin_airflow_lab8/wine.csv"
 
 

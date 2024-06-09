@@ -4,11 +4,11 @@ sequential_queue = "sequential"
 default_queue = "general"
 
 [db]
-db_identifier = "billyin-lab8-db"
+db_identifier = "billyin-lab05-3"
 db_connection = "AIRFLOW_CONN_AWS_RDS_POSTGRES"
 username = 'pgde300'
 password = 'de300spring2024'
-host = 'billyin-lab8-db.cvwhaidrmrqj.us-east-2.rds.amazonaws.com'
+host = 'billyin-lab05-3.cvwhaidrmrqj.us-east-2.rds.amazonaws.com'
 port = '5432'  # Default port for PostgreSQL
 default_db = 'postgres'  # Default database you can connect to
 db_name = 'demo_wine'

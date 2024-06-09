@@ -14,8 +14,8 @@ import pathlib
 from sqlalchemy import create_engine
 
 # read the parameters from toml
-CONFIG_FILE = "s3://de300spring2024-airflow//config.toml"  # Example S3 path
-
+CONFIG_FILE_BUCKET = "de300spring2024"
+CONFIG_FILE_KEY = "billyin-airflow-lab8/my_config_2.toml"
 
 TABLE_NAMES = {
     "original_data": "wine",
@@ -37,24 +37,21 @@ default_args = {
     'retries': 1,
 }
 
-
+# Give credentials to the client
+s3_client = boto3.client('s3',
+                            aws_access_key_id="ASIAYAAO5HRMKLCMHFC3",
+                            aws_secret_access_key="2gWKwhb1YscfEHI5WDu8ZMPrhZ/RKx4vwjTtgj0v",
+                            aws_session_token="IQoJb3JpZ2luX2VjEJr//////////wEaCXVzLWVhc3QtMiJIMEYCIQDQZ8e2FXWK0Mpw3SSraOpKi5vPBvBTqQuEg3F4Ox0kXgIhAPHneT/35Adnqoskp/dzJKr/I2vf44peI0skII6vBqGhKusCCCMQABoMNTQ5Nzg3MDkwMDA4IgwxHnEcEU2tsf9akXMqyAJHsQ6r2rmNuqkzRAYGxbggs12f9icaojOS235xZb8/4N8zerPrETlPSapalfiRK/XmlQCmW2VmJg++dipG48VlftXbfdfyc6eloEN9gzxx7dVBf2CCp+7FzZ8lRBJcGDXzQLslkoJBFSn1dFCXVXqMAnP2OCGgyqr3ge0/zCjKQH+k0dM16hnKv6XwWIsbanS2RD65iN0LoXQW7HZMWlquL4WyUxg51DQj6P/exgWjRW7VSamHlTxBUtfiO0Hs8RFSNmsfcux5vhOjHDM3mSP7nILIllNSw7Kyh88NUdpuKnK3wM5gDXcoWxO0nWJgWNVpzhSq9jA70Won8IARtbRWZPkHTKgPNAVsGTeJrXtzvRBf1hGGjt4F4DaKCiH9aPtjGiR7Hgw2K7MjPs4IuTh+W6vxqfU2k8I9qvwO5o5ecPg3tWIN+Am5MJG837IGOqYBhPvo7nliRBy1BMXIBnyiG6XcL0XwF2HKx4WUyNJTwevC13VeqMDBwoF7obUObmoHr36bxFePBAAZcwpUQ/c0Tk8f/Ah1LyxNnCCO1nJIOSN1kdJp29o61oxpQEZzoi2MzTDLiIOLpUWHbM32QUq4K6HVcrFafIT7Cxxmg6f7Ey5XeVnvcHixyWHqT43VL2zC02GdZqjFLVx3xL2XgQlQXXsSrV0MBg==")
 
 def read_config_from_s3() -> dict:
-    # Parse the bucket name and file key from the S3 path
-    bucket_name = CONFIG_FILE.split('/')[2]
-    key = '/'.join(CONFIG_FILE.split('/')[3:])[1:]
-    
-    # Create a boto3 S3 client
-    s3_client = boto3.client('s3')
-
     try:
         # Fetch the file from S3
-        response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        file_content = response['Body'].read()
-
-        # Load the TOML content
-        params = tomli.loads(file_content.decode('utf-8'))
-        return params
+        response = s3_client.get_object(Bucket=CONFIG_FILE_BUCKET, Key=CONFIG_FILE_KEY)
+        file_content = response['Body'].read().decode('utf-8')
+        config = tomli.loads(file_content)
+        print("HELLO")
+        print(config)
+        return config
     except Exception as e:
         print(f"Failed to read from S3: {str(e)}")
         return {}
@@ -171,9 +168,6 @@ def add_data_to_table_func(**kwargs):
     # Set the S3 bucket and file key
     s3_bucket = PARAMS['files']['s3_bucket']
     s3_key = PARAMS['files']['s3_file_key']
-    
-    # Create an S3 client
-    s3_client = boto3.client('s3')
     
     # Get the object from the S3 bucket
     response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)

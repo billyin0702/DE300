@@ -1,0 +1,44 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=pgde300
+      - POSTGRES_PASSWORD=de300spring2024
+      - POSTGRES_DB=demo_wine
+    ports:
+      - "5432:5432"
+
+  webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://pgde300:de300spring2024@postgres/demo_wine
+      - AIRFLOW__CORE__FERNET_KEY=81HqDtbqAywHKmMiEtTOE5fovV9zG2TImjuvs1PKlzM=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=True
+      - _AIRFLOW_WWW_USER_USERNAME=airflow
+      - _AIRFLOW_WWW_USER_PASSWORD=airflow
+      - AIRFLOW__WEBSERVER__SECRET_KEY=OGS8ezxxkf0HcMlwKHiKXk9R5eb2U3F8Fb9LLIknUEU
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "airflow db init && airflow users create --username airflow --password airflow --firstname Anonymous --lastname Admin --role Admin --email admin@example.com && airflow webserver"
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - webserver
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://pgde300:de300spring2024@postgres/demo_wine
+      - AIRFLOW__CORE__FERNET_KEY=81HqDtbqAywHKmMiEtTOE5fovV9zG2TImjuvs1PKlzM=
+      - AIRFLOW__WEBSERVER__SECRET_KEY=OGS8ezxxkf0HcMlwKHiKXk9R5eb2U3F8Fb9LLIknUEU
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: scheduler

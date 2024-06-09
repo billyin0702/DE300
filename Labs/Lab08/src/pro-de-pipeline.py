@@ -1,15 +1,21 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
+#from airflow.providers.sftp.operators.sftp import SFTPOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.operators.dummy_operator import DummyOperator
+#from airflow.contrib.hooks.ssh_hook import SSHHook
 from airflow.utils.dates import days_ago
+from airflow.hooks.base_hook import BaseHook
 import boto3
+import pandas as pd
+from io import StringIO
 import tomli
 import pathlib
 from sqlalchemy import create_engine
 
 # read the parameters from toml
-CONFIG_FILE = "s3://de300spring2024/billyin-airflow-lab8/my_config.toml"
+CONFIG_FILE_BUCKET = "de300spring2024"
+CONFIG_FILE_KEY = "billyin-airflow-lab8/my_config_2.toml"
 
 TABLE_NAMES = {
     "original_data": "wine",
@@ -28,30 +34,31 @@ default_args = {
     'owner': 'johndoe',
     'depends_on_past': False,
     'start_date': days_ago(1),
-    'retries': 0,
+    'retries': 1,
 }
 
+# # Give credentials to the client
+# s3_client = boto3.client('s3',
+#                             aws_access_key_id="ASIAYAAO5HRMKLCMHFC3",
+#                             aws_secret_access_key="2gWKwhb1YscfEHI5WDu8ZMPrhZ/RKx4vwjTtgj0v",
+#                             aws_session_token="IQoJb3JpZ2luX2VjEJr//////////wEaCXVzLWVhc3QtMiJIMEYCIQDQZ8e2FXWK0Mpw3SSraOpKi5vPBvBTqQuEg3F4Ox0kXgIhAPHneT/35Adnqoskp/dzJKr/I2vf44peI0skII6vBqGhKusCCCMQABoMNTQ5Nzg3MDkwMDA4IgwxHnEcEU2tsf9akXMqyAJHsQ6r2rmNuqkzRAYGxbggs12f9icaojOS235xZb8/4N8zerPrETlPSapalfiRK/XmlQCmW2VmJg++dipG48VlftXbfdfyc6eloEN9gzxx7dVBf2CCp+7FzZ8lRBJcGDXzQLslkoJBFSn1dFCXVXqMAnP2OCGgyqr3ge0/zCjKQH+k0dM16hnKv6XwWIsbanS2RD65iN0LoXQW7HZMWlquL4WyUxg51DQj6P/exgWjRW7VSamHlTxBUtfiO0Hs8RFSNmsfcux5vhOjHDM3mSP7nILIllNSw7Kyh88NUdpuKnK3wM5gDXcoWxO0nWJgWNVpzhSq9jA70Won8IARtbRWZPkHTKgPNAVsGTeJrXtzvRBf1hGGjt4F4DaKCiH9aPtjGiR7Hgw2K7MjPs4IuTh+W6vxqfU2k8I9qvwO5o5ecPg3tWIN+Am5MJG837IGOqYBhPvo7nliRBy1BMXIBnyiG6XcL0XwF2HKx4WUyNJTwevC13VeqMDBwoF7obUObmoHr36bxFePBAAZcwpUQ/c0Tk8f/Ah1LyxNnCCO1nJIOSN1kdJp29o61oxpQEZzoi2MzTDLiIOLpUWHbM32QUq4K6HVcrFafIT7Cxxmg6f7Ey5XeVnvcHixyWHqT43VL2zC02GdZqjFLVx3xL2XgQlQXXsSrV0MBg==")
+
+s3_client = boto3.client('s3')
+
 def read_config_from_s3() -> dict:
-    # Parse the bucket name and file key from the S3 path
-    bucket_name = CONFIG_FILE.split('/')[2]
-    key = '/'.join(CONFIG_FILE.split('/')[3:])[1:]
-
-    # Create a boto3 S3 client
-    s3_client = boto3.client('s3')
-
     try:
         # Fetch the file from S3
-        response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        file_content = response['Body'].read()
-
-        # Load the TOML content
-        params = tomli.loads(file_content.decode('utf-8'))
-        return params
+        response = s3_client.get_object(Bucket=CONFIG_FILE_BUCKET, Key=CONFIG_FILE_KEY)
+        file_content = response['Body'].read().decode('utf-8')
+        config = tomli.loads(file_content)
+        print("HELLO")
+        print(config)
+        return config
     except Exception as e:
         print(f"Failed to read from S3: {str(e)}")
         return {}
 
-# Reading params from S3
+# Usage
 PARAMS = read_config_from_s3()
 
 def create_db_connection():
@@ -67,6 +74,8 @@ def create_db_connection():
     connection = engine.connect()
 
     return connection
+
+
 
 def from_table_to_df(input_table_names: list[str], output_table_names: list[str]):
     """
@@ -149,18 +158,30 @@ def from_table_to_df(input_table_names: list[str], output_table_names: list[str]
         return wrapper
     return decorator
 
+
+
 def add_data_to_table_func(**kwargs):
     """
-    insert data from local csv to a db table
+    Insert data from a CSV file stored in S3 to a database table.
     """
-
-    import pandas as pd
-
+    # Create a database connection
     conn = create_db_connection()
+    
+    # Set the S3 bucket and file key
+    s3_bucket = PARAMS['files']['s3_bucket']
+    s3_key = PARAMS['files']['s3_file_key']
+    
+    # Get the object from the S3 bucket
+    response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+    
+    # Read the CSV file directly from the S3 object's byte stream into a DataFrame
+    csv_content = response['Body'].read().decode('utf-8')
+    df = pd.read_csv(StringIO(csv_content))
+    
+    # Write the DataFrame to SQL
+    df.to_sql(TABLE_NAMES['original_data'], con=conn, if_exists="replace", index=False)
 
-    df = pd.read_csv(PARAMS['files']['local_file'], header=0)
-    df.to_sql(TABLE_NAMES['original_data'], conn, if_exists="replace", index=False)
-
+    # Close the database connection
     conn.close()
 
     return {'status': 1}
@@ -199,59 +220,6 @@ def clean_data_func(**kwargs):
              }]
         }
 
-"""
-normalization related functions; if normalization algorithm is changed, only these functions must change
-"""
-
-def normalize(df):
-    from sklearn.preprocessing import MinMaxScaler
-
-    scaler = MinMaxScaler()
-    scaler.fit(df)
-    return scaler
-
-def normalize_column(df, column: str):
-    """
-    normalize df[column]
-
-    return tuple that can be directly inserted into the normalization table
-    """
-
-    from sklearn.preprocessing import MinMaxScaler
-
-    scaler = MinMaxScaler()
-    df[column] = scaler.fit_transform(df[column].values.reshape(-1, 1))
-    return (column, scaler.data_min_[0], scaler.data_max_[0], scaler.scale_[0], scaler.min_[0])
-
-def normalization_transform_column(df, column: str, values: dict):
-    # must be equivalent to MinMaxScaler.transform
-    df[column] = (df[column] - values['min'])/values['scale']
-
-    return df
-
-def denormalize_columns(df, normalization_values):
-    """
-    denormalize columns in df; based on the code in MinMaxScaler in sklearn
-
-    column is a column name in df; normalization is the dataframe with normalization values
-
-    must be equivalant to MinMaxScaler.inverse_transform
-    """
-
-    for column in df.columns:
-        values = normalization_values[normalization_values['name'] == column]
-        if values.empty and column != PARAMS['ml']['labels']:
-            print('Column {column} not found in the normalization data table.')
-        else:
-            values = values.iloc[0].to_dict()
-            df[column] = df[column] * values['scale'] + values['min']
-
-    return df
-
-"""
-end of normalization functions
-"""
-
 @from_table_to_df(TABLE_NAMES['clean_data'], None)
 def normalize_data_func(**kwargs):
     """
@@ -259,6 +227,7 @@ def normalize_data_func(**kwargs):
     split to train/test
     """
     
+    from sklearn.preprocessing import MinMaxScaler
     from sklearn.model_selection import train_test_split
     import pandas as pd
 
@@ -270,9 +239,10 @@ def normalize_data_func(**kwargs):
     # Normalize numerical columns
     normalization_values = [] # 
     for column in [v for v in df_train.select_dtypes(include=['float64', 'int64']).columns if v != PARAMS['ml']['labels']]:
-        normalization_values.append(normalize_column(df_train, column))
-    
-    normalization_df = pd.DataFrame(data=normalization_values, columns=NORMALIZATION_TABLE_COLUMN_NAMES)
+        scaler = MinMaxScaler()
+        df_train[column] = scaler.fit_transform(df_train[column].values.reshape(-1, 1))
+        normalization_values.append((column, scaler.data_min_[0], scaler.data_max_[0], scaler.scale_[0]))
+    normalization_df = pd.DataFrame(data=normalization_values, columns=["name", "min", "max", "scale"])
 
     return {
         'dfs': [
@@ -305,35 +275,6 @@ def eda_func(**kwargs):
 
     return { 'dfs': [] }
 
-def add_to_table_normalization_values(normalization_values):
-    """
-    append to the normalization table new values (engineered features)
-    """
-
-    import pandas as pd
-
-    normalization_df = pd.DataFrame(data=normalization_values, columns=NORMALIZATION_TABLE_COLUMN_NAMES)
-    conn = create_db_connection()
-    normalization_df.to_sql(TABLE_NAMES['normalization_data'], conn, if_exists="append", index=False)
-    conn.close()
-
-def _fe_max_func(df=None, normalization=True):
-    import pandas as pd
-
-    # Create new features that are products of all pairs of features
-    features = [v for v in df.select_dtypes(include=['float64', 'int64']).columns if v != PARAMS['ml']['labels']]
-    new_features_df = pd.DataFrame()
-    normalization_values = []
-    for i in range(len(features)):
-        for j in range(i+1, len(features)):
-            column_name = 'max_'+features[i]+'_'+features[j]
-            new_features_df[column_name] = df[[features[i], features[j]]].max(axis=1)
-            # normalize the new feature
-            if normalization == True:
-                normalization_values.append(normalize_column(new_features_df, column_name))
-
-    return normalization_values, new_features_df
-
 @from_table_to_df(TABLE_NAMES['train_data'], None)
 def fe_max_func(**kwargs):
     """
@@ -344,10 +285,12 @@ def fe_max_func(**kwargs):
 
     df = kwargs['dfs']
 
-    normalization_values, new_features_df = _fe_max_func(df=df)
-
-    # insert the new normalization values to the table
-    add_to_table_normalization_values(normalization_values)
+    # Create new features that are products of all pairs of features
+    features = [v for v in df.select_dtypes(include=['float64', 'int64']).columns if v != PARAMS['ml']['labels']]
+    new_features_df = pd.DataFrame()
+    for i in range(len(features)):
+        for j in range(i+1, len(features)):
+            new_features_df['max_'+features[i]+'_'+features[j]] = df[[features[i], features[j]]].max(axis=1)
 
     return {
         'dfs': [
@@ -355,22 +298,6 @@ def fe_max_func(**kwargs):
              'table_name': TABLE_NAMES['max_fe']
              }]
         }
-
-def _fe_product_func(df=None, normalization=True):
-    import pandas as pd
-
-    # Create new features that are products of all pairs of features
-    features = [v for v in df.select_dtypes(include=['float64', 'int64']).columns if v != PARAMS['ml']['labels']]
-    new_features_df = pd.DataFrame()
-    normalization_values = []
-    for i in range(len(features)):
-        for j in range(i+1, len(features)):
-            column_name = f'{features[i]}*{features[j]}'
-            new_features_df[column_name] = df[features[i]] * df[features[j]]
-            if normalization == True:
-                normalization_values.append(normalize_column(new_features_df, column_name))
-
-    return normalization_values, new_features_df
 
 @from_table_to_df(TABLE_NAMES['train_data'], None)
 def fe_product_func(**kwargs):
@@ -382,10 +309,14 @@ def fe_product_func(**kwargs):
 
     df = kwargs['dfs']
 
-    normalization_values, new_features_df = _fe_product_func(df=df)
+    # Create new features that are products of all pairs of features
+    features = [v for v in df.select_dtypes(include=['float64', 'int64']).columns if v != PARAMS['ml']['labels']]
+    new_features_df = pd.DataFrame()
+    for i in range(len(features)):
+        for j in range(i+1, len(features)):
+            new_features_df[features[i]+'*'+features[j]] = df[features[i]] * df[features[j]]
 
-    # insert the new normalization values to the table
-    add_to_table_normalization_values(normalization_values)
+    # NOTE: normalization should be done
 
     return {
         'dfs': [
@@ -416,16 +347,8 @@ def train_model(dfs):
 
     Y = df[PARAMS['ml']['labels']]
     X = df.drop(PARAMS['ml']['labels'], axis=1)
-
-    # data has been normalized with respect to train/test split; we need to denormalize it and then renormalize it
-    conn = create_db_connection()
-    normalization_values = pd.read_sql(f"SELECT * FROM {TABLE_NAMES['normalization_data']}", conn)
-    conn.close()
-    X = denormalize_columns(X, normalization_values)
+    
     X_train, X_val, y_train, y_val = train_test_split(X, Y, test_size=PARAMS['ml']['train_test_ratio'], random_state=42)
-
-    scaler = normalize(X_train)
-    X_train = scaler.transform(X_train)
 
     # Create an instance of Logistic Regression model
     model = LogisticRegression()
@@ -434,7 +357,6 @@ def train_model(dfs):
     model.fit(X_train, y_train)
 
     # Make predictions on the val set
-    X_val = scaler.transform(X_val)
     y_pred = model.predict(X_val)
 
     # Calculate the accuracy of the model
@@ -443,7 +365,7 @@ def train_model(dfs):
 
     return accuracy
 
-@from_table_to_df([TABLE_NAMES['product_fe'], TABLE_NAMES['train_data']], None)
+@from_table_to_df([TABLE_NAMES['product_fe'], TABLE_NAMES['train_data']], TABLE_NAMES["product_fe"])
 def product_train_func(**kwargs):
     """
     train logistic regression on product features
@@ -477,7 +399,7 @@ def production_train_func(**kwargs):
         'dfs': []
     }
 
-@from_table_to_df([TABLE_NAMES['max_fe'], TABLE_NAMES['train_data']], None)
+@from_table_to_df([TABLE_NAMES['max_fe'], TABLE_NAMES['train_data']], TABLE_NAMES["max_fe"])
 def max_train_func(**kwargs):
     """
     train logistic regression on max features
@@ -515,7 +437,7 @@ def decide_which_model(**kwargs):
     else:
         return encode_task_id("product")
 
-def extensive_evaluation_func(train_df=None, test_df=None, train_fe_df=None, normalization_df=None, fe_func=None, **kwargs):
+def extensive_evaluation_func(train_df, test_df, fe_type: str, **kwargs):
     """
     train the model on the entire validation data set
     test the final model on test; evaluation also on perturbed test data set
@@ -528,9 +450,6 @@ def extensive_evaluation_func(train_df=None, test_df=None, train_fe_df=None, nor
     from scipy.stats import norm
 
     model = LogisticRegression()
-
-     # combine dataframes
-    train_df = pd.concat([train_df, train_fe_df], axis=1)
 
     # Train the model
     y_train = train_df[PARAMS['ml']['labels']]
@@ -545,25 +464,12 @@ def extensive_evaluation_func(train_df=None, test_df=None, train_fe_df=None, nor
             # we are also perturbing categorical features which is fine since the perturbation is small and thus should not have affect on such features
             X_test = X_test.apply(lambda x: x + np.random.normal(0, PARAMS['ml']['perturbation_std'], len(x)))
 
-        # compute engineered features
-        _, new_features = fe_func(df = X_test, normalization=False)
-        X_test = pd.concat([X_test, new_features], axis=1)
-
-        # test data must be scaled
-        for column in X_test.columns:
-            values = normalization_df[normalization_df['name'] == column]
-            if values.empty:
-                print('Column {column} not found in the normalization data table.')
-            else:
-                values = values.iloc[0].to_dict()
-                X_test = normalization_transform_column(X_test, column, values)
-        
         y_pred = model.predict(X_test)
         # Calculate the accuracy of the model
         accuracy = accuracy_score(y_test, y_pred)
 
         return accuracy
-    
+
     accuracy = accuracy_on_test(perturb=False)
     print(f"Accuracy on test {accuracy}")
 
@@ -577,7 +483,6 @@ def extensive_evaluation_func(train_df=None, test_df=None, train_fe_df=None, nor
         # compute the confidence interval; break if in the range
         average = np.mean(accuracies)
         std_error = np.std(accuracies) / np.sqrt(len(accuracies))
-
         confidence_interval = norm.interval(PARAMS['ml']['confidence_level'], loc=average, scale=std_error)
         confidence = confidence_interval[1] - confidence_interval[0]
         if confidence <= 2 * std_error:
@@ -587,25 +492,23 @@ def extensive_evaluation_func(train_df=None, test_df=None, train_fe_df=None, nor
 
     print(f"Average accuracy on perturbed test {average}")
     
-@from_table_to_df([TABLE_NAMES['train_data'], TABLE_NAMES['test_data'], TABLE_NAMES['max_fe'], TABLE_NAMES["normalization_data"]], TABLE_NAMES['product_fe'])
+@from_table_to_df([TABLE_NAMES['train_data'], TABLE_NAMES['test_data']], None)
 def max_evaluation_func(**kwargs):
     dfs = kwargs['dfs']
-
-    extensive_evaluation_func(train_df=dfs[0], test_df=dfs[1], train_fe_df=dfs[2], normalization_df=dfs[3], fe_func=_fe_max_func)
+    extensive_evaluation_func(dfs[0], dfs[1], "max")
 
     return {'dfs': []}
 
-@from_table_to_df([TABLE_NAMES['train_data'], TABLE_NAMES['test_data'], TABLE_NAMES['product_fe'], TABLE_NAMES["normalization_data"]], TABLE_NAMES['max_fe'])
+@from_table_to_df([TABLE_NAMES['train_data'], TABLE_NAMES['test_data']], None)
 def product_evaluation_func(**kwargs):
     dfs = kwargs['dfs']
+    extensive_evaluation_func(dfs[0], dfs[1], "product")
 
-    extensive_evaluation_func(train_df=dfs[0], test_df=dfs[1], train_fe_df=dfs[2], normalization_df=dfs[3], fe_func=_fe_product_func)
-    
     return {'dfs': []}
 
 # Instantiate the DAG
 dag = DAG(
-    'Pro-Classify',
+    'Classify',
     default_args=default_args,
     description='Classify with feature engineering and model selection',
     schedule_interval=PARAMS['workflow']['workflow_schedule_interval'],
@@ -625,22 +528,20 @@ drop_tables = PostgresOperator(
     dag=dag
 )
 
-# download_data = SFTPOperator(
-#     task_id="download_data",
-#     ssh_hook = SSHHook(ssh_conn_id=PARAMS['files']['sftp_connection']),
-#     remote_filepath=PARAMS['files']['remote_file'], 
-#     local_filepath=PARAMS['files']['local_file'],
-#     operation="get",
-#     create_intermediate_dirs=True,
-#     queue=PARAMS['workflow']['sequential_queue'],
-#     dag=dag
-# )
+#download_data = SFTPOperator(
+#        task_id="download_data",
+#        ssh_hook = SSHHook(ssh_conn_id=PARAMS['files']['sftp_connection']),
+#        remote_filepath=PARAMS['files']['remote_file'], 
+#        local_filepath=PARAMS['files']['local_file'],
+#        operation="get",
+#        create_intermediate_dirs=True,
+#        dag=dag
+#    )
 
 add_data_to_table = PythonOperator(
     task_id='add_data_to_table',
     python_callable=add_data_to_table_func,
     provide_context=True,
-    queue=PARAMS['workflow']['sequential_queue'],
     dag=dag
 )
 
@@ -648,7 +549,6 @@ clean_data = PythonOperator(
     task_id='clean_data',
     python_callable=clean_data_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -656,7 +556,6 @@ normalize_data = PythonOperator(
     task_id='normalize_data',
     python_callable=normalize_data_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -664,7 +563,6 @@ eda = PythonOperator(
     task_id='EDA',
     python_callable=eda_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -672,7 +570,6 @@ fe_max = PythonOperator(
     task_id='add_max_features',
     python_callable=fe_max_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -680,7 +577,6 @@ fe_product = PythonOperator(
     task_id='add_product_features',
     python_callable=fe_product_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -688,7 +584,6 @@ product_train = PythonOperator(
     task_id='product_train',
     python_callable=product_train_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -696,7 +591,6 @@ max_train = PythonOperator(
     task_id='max_train',
     python_callable=max_train_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -704,7 +598,6 @@ production_train = PythonOperator(
     task_id='production_train',
     python_callable=production_train_func,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag
 )
 
@@ -712,13 +605,11 @@ model_selection = BranchPythonOperator(
     task_id='model_selection',
     python_callable=decide_which_model,
     provide_context=True,
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag,
 )
 
 dummy_task = DummyOperator(
     task_id='do_nothing',
-    queue=PARAMS['workflow']['default_queue'],
     dag=dag,
 )
 
@@ -729,7 +620,6 @@ for feature_type in feature_operations:
         task_id=encoding,
         python_callable=locals()[f'{encoding}_func'],
         provide_context=True,
-        queue=PARAMS['workflow']['default_queue'],
         dag=dag
     ))
 

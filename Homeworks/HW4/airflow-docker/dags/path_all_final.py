@@ -32,7 +32,17 @@ def read_config_from_s3(client) -> dict:
         return {}
     
 # CONFIG
-S3C = boto3.client('s3')
+# S3C = boto3.client('s3')
+# For local testing
+aws_access_key_id="ASIAYAAO5HRMBJZLHZHE"
+aws_secret_access_key="/AvYtU24OEEcAkbfBGFFSHZYkDL3/4hh4cv2ILO2"
+aws_session_token="IQoJb3JpZ2luX2VjEHMaCXVzLWVhc3QtMiJHMEUCIQDS6fkP29gN7gwLP7QStiURg+gkc5nbclz2oUUvViPFKwIgKMoi8HxZmzxlA2pXvWbbh4CG11tJK4lqaZiwV84Ka3wq9AII/f//////////ARAAGgw1NDk3ODcwOTAwMDgiDFkogZ+zGbDRh+DgkCrIAk1DiQGaglSnMTQ5GvYW0tLXswFrfKBomdpyK/5Hcpyrd1jD2ceD2ixQLJ6gR7NU/TEWrdF91YbklGjeNtvtooHTvJTRvpkR+roGAeo618wwhBQvjW24vTl2vMK6OqKeujerpXbeEN0bFlhoQkZ/toP//SbkOa2v2AlNzGIi2GW17j8chNGaZgl4/dbypbariJrBn9gRAXTwz12aijjqMZAN4HcckqsWPY93fyzR3r5ShHnG5C0axmO/LmO0hD1YhyYtTvfljexL25m5nEELE6ObIXcV+549w1t7ukUzoqLRsFE43CykTWTvprKbX/X0zMhWtX35MUgkRLTc0o3sr/Q3TmaE4QW6SxkTCf1b86e6FEnUkkN/A1ZHNoRKPSUjvJd5LOup8UgdT+HcYbie7SNGiUrOyl/V13zo5KFYaWzsZkFfOfKAGaYwmp+PswY6pwHUiZhIKBHVV3pzzkMCuFMGtLlzvK3pss32zRf1ZigWLM9V58GzCIrt0fSuPaDxmhUPqNTcY1woknUYnRuvhqMlF/2BPpGe3EkiuHTAwR8DbqLIggJ4bdGtR5PtiGWVLbSr6CAtnRPCmKxU42hVflD9uxEOeaiu//iNoEJ+RD2XPxL5dGt4nKkwSI+fv+unniRDE68022J2twhlRg2bykL24Fv7YbQk/Q=="
+
+S3C = boto3.client('s3',
+                        aws_access_key_id=aws_access_key_id,
+                        aws_secret_access_key=aws_secret_access_key,
+                        aws_session_token=aws_session_token)
+
 CONFIG = read_config_from_s3(S3C)
 
 # Columns, group together numerical, categorical, and binary feature column names
@@ -232,9 +242,6 @@ def initial_impute_p2(**kwargs):
 
     # Fill with mode
     data = fill_with_mode(data, "age")
-
-    # Turn data back to pandas
-    data = data.toPandas()
     return data
 
 ######################################
@@ -266,28 +273,19 @@ def fill_with_mean(data, column):
 
 def feature_engineering_p2(**kwargs):
     # Necessary Imports
+    from pyspark.ml.feature import Imputer
     from pyspark.sql.functions import coalesce, lit
     from pyspark.sql import SparkSession
     from pyspark.sql.functions import col, when
-    from pyspark.sql.types import StringType, StructType, StructField, DoubleType
 
     data = kwargs['ti'].xcom_pull(task_ids='initial_impute_p2')
 
-    # Turn data into a Spark DataFrame
-    spark = SparkSession.builder.appName("Feature_Engineering_2").getOrCreate()
-    schema = StructType([StructField(col_name, StringType(), True) for col_name in data.columns])
-    data = spark.createDataFrame(data, schema=schema)
-
-    # Cast the columns to doubles
-    for col_name in data.columns:
-        data = data.withColumn(col_name, col(col_name).cast(DoubleType()))
-
-    # # imputers = []
-    # imputed_columns = []
-    # cols = DATA_COLS
+    imputers = []
+    imputed_columns = []
+    cols = DATA_COLS
 
     # Clean the data further using techniques like imputation and one-hot encoding
-    # 1. Replace painloc and painexer NaNs with 0 (default value)
+    # 1. Replace painloc and painexer NAs with 0 (default value)
     data = data.withColumn("painloc", coalesce(col("painloc"), lit(0)))
     data = data.withColumn("painexer", coalesce(col("painexer"), lit(0)))
 
@@ -308,15 +306,12 @@ def feature_engineering_p2(**kwargs):
     data = data.withColumn("pro", coalesce(col("pro"), lit(0)))
     data = data.withColumn("diuretic", coalesce(col("diuretic"), lit(0)))
 
-    # 6. Thaldur and Thalach are continuous variables, replace NAs with the mean
-    data = fill_with_mean(data, "thaldur")
-    data = fill_with_mean(data, "thalach")
-    # # 6. Use imputer to fill missing values
-    # # imputer_1 = Imputer(inputCols=["thaldur", "thalach"], outputCols=["thaldur_imputed", "thalach_imputed"], strategy = "mean")
-    # # imputers.append(imputer_1)
-    # imputed_columns.extend(["thaldur_imputed", "thalach_imputed"])
-    # cols.remove("thaldur")
-    # cols.remove("thalach")
+    # 6. Use imputer to fill missing values
+    imputer_1 = Imputer(inputCols=["thaldur", "thalach"], outputCols=["thaldur_imputed", "thalach_imputed"], strategy = "mean")
+    imputers.append(imputer_1)
+    imputed_columns.extend(["thaldur_imputed", "thalach_imputed"])
+    cols.remove("thaldur")
+    cols.remove("thalach")
 
     # 7. Exang is a binary variable, replace NAs with 0
     data = data.withColumn("exang", coalesce(col("exang"), lit(0)))
@@ -326,26 +321,18 @@ def feature_engineering_p2(**kwargs):
     data = data.withColumn("oldpeak", when(col("oldpeak") <= 0, 1.5).otherwise(col("oldpeak")))
     data = fill_with_mean(data, "oldpeak")
 
-    # 9. Slope is a categorical variable, replace NAs with the mode
-    data = fill_with_mode(data, "slope")
-
-    # # 9. Use imputer to fill missing values
-    # # imputer_2 = Imputer(inputCols=["slope"], outputCols=["slope_imputed"], strategy="mode")
-    # # imputers.append(imputer_2)
-    # imputed_columns.append("slope_imputed")
-    # cols.remove("slope")
+    # 9. Use imputer to fill missing values
+    imputer_2 = Imputer(inputCols=["slope"], outputCols=["slope_imputed"], strategy="mode")
+    imputers.append(imputer_2)
+    imputed_columns.append("slope_imputed")
+    cols.remove("slope")
 
     # 10. Review all columns to ensure no NAs
     cprint(f"Number of Rows: {data.count()}")
     cprint(f"NA Review")
     data.select([col(c).alias(c) for c in data.columns if data.where(col(c).isNull()).count() > 0]).show()
 
-    # Cprint number of na rows
-    cprint(f"Number of NA rows: {data.na.drop().count()}")
-
-    # Turn data back to pandas
-    data = data.toPandas()
-    return data
+    return data, imputers, imputed_columns, cols
 
 ########################################################################################
 # MERGE
@@ -492,7 +479,7 @@ def merge_smoke(**kwargs):
     import numpy as np
     import pandas as pd
     from pyspark.sql.functions import udf, col, when
-    from pyspark.sql.types import IntegerType, ArrayType, BooleanType, StringType, StructType, StructField, DoubleType
+    from pyspark.sql.types import IntegerType, ArrayType, BooleanType
     from pyspark.sql import SparkSession
 
     def extract_numbers(text):
@@ -514,17 +501,12 @@ def merge_smoke(**kwargs):
 
     # Define a UDF to check if age falls within any given range
     def age_in_range(age, rg):
-        age = float(age)
-        try: 
-            rg = list(map(float, rg))
-            if len(rg) == 1:
-                return age >= rg[0]
-            return rg[0] <= age <= rg[1]
-        except:
-            return True
+        if len(rg) == 1:
+            return age >= rg[0]
+        return rg[0] <= age <= rg[1]
 
     def same_gender(g1: int, g2: int):
-        return float(g1) == float(g2)
+        return int(g1) == int(g2)
 
     """
     Clean the smoke column by removing the 'smoke' prefix
@@ -535,13 +517,10 @@ def merge_smoke(**kwargs):
 
     # Get Data from the previous task
     data = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')
-    schema = StructType([StructField(col_name, StringType(), True) for col_name in data.columns])
-    cprint(f"All columns: {data.columns}")
-    data = spark.createDataFrame(data, schema=schema)
     abs_rows, abs_headers, cdc_alt_data = kwargs['ti'].xcom_pull(task_ids='scrape_smoke')
 
-    # Create a Spark DataFrame from the abs_rows and abs_headers
-    abs_data = spark.createDataFrame(abs_rows, abs_headers)
+    # Create a DataFrame from the abs_rows and abs_headers
+    abs_data = pd.DataFrame(abs_rows, abs_headers)
 
     # Assign UDFs
     extract_numbers_udf = udf(extract_numbers, ArrayType(IntegerType()))
@@ -593,9 +572,6 @@ def merge_smoke(**kwargs):
 
     # Drop auxiliary columns
     data = data.drop("smoke_abs", "smoke_cdc", "ages", "prob", "ages_cdc", "prob_cdc", "prob_cdc_100", "gender_cdc")
-
-    # Turn data back to pandas
-    data = data.toPandas()
     return data
 
 
@@ -637,10 +613,7 @@ def evaluate_models_p1_lr(**kwargs) -> None:
     data = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p1')
     model_accuracies = evaluate_models_p1_helper(data, "Logistic Regression")
 
-    return {
-        "model": "p1_lr",
-        "accuracy": model_accuracies
-    }
+    return "p1_lr", model_accuracies
 
 def evaluate_models_p1_svm(**kwargs) -> None:
     """
@@ -650,41 +623,28 @@ def evaluate_models_p1_svm(**kwargs) -> None:
     data = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p1')
     model_accuracies = evaluate_models_p1_helper(data, "SVM")
 
-    return {
-        "model": "p1_svm",
-        "accuracy": model_accuracies
-    }
+    return "p1_svm", model_accuracies
 
 
-def evaluate_lr_model_spark(data):
+def evaluate_lr_model_spark(data, imputers, imputed_cols, cols):
     # Necessary Imports
     from pyspark.ml.feature import VectorAssembler
     from pyspark.ml.classification import LogisticRegression
     from pyspark.ml.tuning import ParamGridBuilder
     from pyspark.ml import Pipeline
     from pyspark.ml.evaluation import BinaryClassificationEvaluator
-    from pyspark.ml.feature import Imputer
-    from pyspark.sql.functions import col
 
     cprint("Evaluating models...")
     # Assembler for the features
-    input_cols = DATA_COLS
+    input_cols = imputed_cols + cols
     input_cols.remove("target")
     assembler = VectorAssembler(
         inputCols=input_cols, 
         outputCol="features"
         )
-    
-    # Remove any remaining rows with NA values
-    cprint(f"Rows before dropping: {data.count()}")
-    data = data.dropna()
-    cprint(f"Rows after dropping: {data.count()}")
-    
-    # Print number of NA rows
-    cprint(f"Number of NA rows: {data.na.drop().count()}")
 
     lr = LogisticRegression(featuresCol='features', 
-                            labelCol='target', 
+                            labelCol='label', 
                             maxIter=20, 
                             regParam=0, 
                             elasticNetParam=0.8,
@@ -694,15 +654,12 @@ def evaluate_lr_model_spark(data):
     train_data, test_data = data.randomSplit([TRAIN_TEST_SPLIT, 1-TRAIN_TEST_SPLIT])
 
     # Create the pipeline
-    cprint("Creating pipeline...")
-    pipeline = Pipeline(stages=[assembler, lr])
+    pipeline = Pipeline(stages=[*imputers, assembler, lr])
 
     # Fit the model
-    cprint("Fitting model...")
     model = pipeline.fit(train_data)
 
     # Make predictions
-    cprint("Making predictions...")
     predictions = model.transform(test_data)
 
     # Evaluate the model
@@ -713,41 +670,41 @@ def evaluate_lr_model_spark(data):
 
     return auc
 
-def evaluate_svc_model_spark(data):
+def evaluate_svc_model_spark(**kwargs):
     # Necessary Imports
     from pyspark.ml.feature import VectorAssembler
-    from pyspark.ml.classification import LinearSVC
+    from pyspark.ml.classification import LogisticRegression
     from pyspark.ml.tuning import ParamGridBuilder
     from pyspark.ml import Pipeline
     from pyspark.ml.evaluation import BinaryClassificationEvaluator
-    from pyspark.ml.feature import Imputer
-    from pyspark.sql.functions import col
+
+    # Get Data
+    data = kwargs['ti'].xcom_pull(task_ids='merge_smoke')
+    imputers = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[1]
+    imputed_cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[2]
+    cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[3]
 
     cprint("Evaluating models...")
     # Assembler for the features
-    input_cols = DATA_COLS
+    input_cols = imputed_cols + cols
     input_cols.remove("target")
     assembler = VectorAssembler(
         inputCols=input_cols, 
         outputCol="features"
         )
-    
-    # Remove any remaining rows with NA values
-    cprint(f"Rows before dropping: {data.count()}")
-    data = data.dropna()
-    cprint(f"Rows after dropping: {data.count()}")
-    
-    # Print number of NA rows
-    cprint(f"Number of NA rows: {data.na.drop().count()}")
 
-    svc = LinearSVC(featuresCol='features', 
-                            labelCol='target')
+    lr = LogisticRegression(featuresCol='features', 
+                            labelCol='label', 
+                            maxIter=20, 
+                            regParam=0, 
+                            elasticNetParam=0.8,
+                            tol=1e-6)
 
     # Split the data into training and testing sets
     train_data, test_data = data.randomSplit([TRAIN_TEST_SPLIT, 1-TRAIN_TEST_SPLIT])
 
     # Create the pipeline
-    pipeline = Pipeline(stages=[assembler, svc])
+    pipeline = Pipeline(stages=[*imputers, assembler, lr])
 
     # Fit the model
     model = pipeline.fit(train_data)
@@ -762,145 +719,65 @@ def evaluate_svc_model_spark(data):
     auc = evaluator.evaluate(predictions)
 
     # Return the name of the model and the AUC
-    return auc
+    name = kwargs.get("name", "Logistic Regression")
+    return name, auc
 
 
 def evaluate_models_p2_lr(**kwargs):
     """
     Wrapper function to evaluate the Logistic Regression model
     """
-    # Imports
-    from pyspark.sql import SparkSession
-    from pyspark.sql.types import StructType, StructField, StringType, DoubleType
-    from pyspark.sql.functions import col
 
     # Get Data
     data = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')
+    imputers = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[1]
+    imputed_cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[2]
+    cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[3]
+    model_accuracy = evaluate_lr_model_spark(data, imputers, imputed_cols, cols)
 
-    # Turn data into a Spark DataFrame
-    spark = SparkSession.builder.appName("Evaluate_Models_P2_LR").getOrCreate()
-    schema = StructType([StructField(col_name, StringType(), True) for col_name in data.columns])
-    data = spark.createDataFrame(data, schema=schema)
-
-    # Cast the columns to doubles
-    for col_name in data.columns:
-        data = data.withColumn(col_name, col(col_name).cast(DoubleType()))
-
-    # # Print numbers of rows remaining after dropping NAs
-    # cprint(f"Rows before dropping: {data.count()}")
-    # data = data.dropna()
-    # cprint(f"Rows after dropping: {data.count()}")
-
-    # Evaluate the model
-    model_accuracy = evaluate_lr_model_spark(data)
-
-    return {
-        "model": "p2_lr",
-        "accuracy": model_accuracy
-    }
+    return "p2_lr", model_accuracy
 
 def evaluate_models_p2_svm(**kwargs):
     """
     Wrapper function to evaluate the SVM model
     """
-    # Imports
-    from pyspark.sql import SparkSession
-    from pyspark.sql.types import StructType, StructField, StringType, DoubleType
-    from pyspark.sql.functions import col
 
     # Get Data
     data = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')
+    imputers = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[1]
+    imputed_cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[2]
+    cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[3]
+    model_accuracy = evaluate_svc_model_spark(data, imputers, imputed_cols, cols)
 
-    # Turn data into a Spark DataFrame
-    spark = SparkSession.builder.appName("Evaluate_Models_P2_SVM").getOrCreate()
-    schema = StructType([StructField(col_name, StringType(), True) for col_name in data.columns])
-    data = spark.createDataFrame(data, schema=schema)
-
-    # Cast the columns to doubles
-    for col_name in data.columns:
-        data = data.withColumn(col_name, col(col_name).cast(DoubleType()))
-
-    # # Remove any remaining rows with NA values
-    # cprint(f"Rows before dropping: {data.count()}")
-    # data = data.dropna()
-    # cprint(f"Rows after dropping: {data.count()}")
-
-    # Evaluate the model
-    model_accuracy = evaluate_svc_model_spark(data)
-
-    return {
-        "model": "p2_svm",
-        "accuracy": model_accuracy
-    }
+    return "p2_svm", model_accuracy
 
 def evaluate_models_merge_lr(**kwargs):
     """
     Wrapper function to evaluate the Logistic Regression model
     """
-    # Imports
-    from pyspark.sql import SparkSession
-    from pyspark.sql.types import StructType, StructField, StringType, DoubleType
-    from pyspark.sql.functions import col
 
-    # Get Data
     # Get Data
     data = kwargs['ti'].xcom_pull(task_ids='merge_smoke')
+    imputers = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[1]
+    imputed_cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[2]
+    cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[3]
+    model_accuracy = evaluate_lr_model_spark(data, imputers, imputed_cols, cols)
 
-    # Turn data into a Spark DataFrame
-    spark = SparkSession.builder.appName("Evaluate_Models_Merge_LR").getOrCreate()
-    schema = StructType([StructField(col_name, StringType(), True) for col_name in data.columns])
-    data = spark.createDataFrame(data, schema=schema)
-
-    # Cast the columns to doubles
-    for col_name in data.columns:
-        data = data.withColumn(col_name, col(col_name).cast(DoubleType()))
-
-    # # Remove any remaining rows with NA values
-    # cprint(f"Rows before dropping: {data.count()}")
-    # data = data.dropna()
-    # cprint(f"Rows after dropping: {data.count()}")
-
-    # Evaluate the model
-    model_accuracy = evaluate_lr_model_spark(data)
-
-    return {
-        "model": "merge_lr",
-        "accuracy": model_accuracy
-    }
+    return "merge_lr", model_accuracy
 
 def evaluate_models_merge_svm(**kwargs):
     """
     Wrapper function to evaluate the SVM model
     """
-    # Imports
-    from pyspark.sql import SparkSession
-    from pyspark.sql.types import StructType, StructField, StringType, DoubleType
-    from pyspark.sql.functions import col
 
     # Get Data
     data = kwargs['ti'].xcom_pull(task_ids='merge_smoke')
+    imputers = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[1]
+    imputed_cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[2]
+    cols = kwargs['ti'].xcom_pull(task_ids='feature_engineering_p2')[3]
+    model_accuracy = evaluate_svc_model_spark(data, imputers, imputed_cols, cols)
 
-    # Turn data into a Spark DataFrame
-    spark = SparkSession.builder.appName("Evaluate_Models_Merge_SVM").getOrCreate()
-    schema = StructType([StructField(col_name, StringType(), True) for col_name in data.columns])
-    data = spark.createDataFrame(data, schema=schema)
-
-    # Cast the columns to doubles
-    for col_name in data.columns:
-        data = data.withColumn(col_name, col(col_name).cast(DoubleType()))
-
-    # # Remove any remaining rows with NA values
-    # cprint(f"Rows before dropping: {data.count()}")
-    # data = data.dropna()
-    # cprint(f"Rows after dropping: {data.count()}")
-
-    # Evaluate the model
-    model_accuracy = evaluate_svc_model_spark(data)
-
-    return {
-        "model": "merge_svm",
-        "accuracy": model_accuracy
-    }
+    return "merge_svm", model_accuracy
 
 ########################################################################################
 # Final Model Selection
@@ -908,27 +785,22 @@ def evaluate_models_merge_svm(**kwargs):
 def select_best_model(**kwargs):
     # Get the model accuracies
     model_accuracies = [
-        kwargs['ti'].xcom_pull(task_ids='evaluate_models_p1_lr'),
-        kwargs['ti'].xcom_pull(task_ids='evaluate_models_p1_svm'),
-        kwargs['ti'].xcom_pull(task_ids='evaluate_models_p2_lr'),
-        kwargs['ti'].xcom_pull(task_ids='evaluate_models_p2_svm'),
-        kwargs['ti'].xcom_pull(task_ids='evaluate_models_merge_lr'),
-        kwargs['ti'].xcom_pull(task_ids='evaluate_models_merge_svm')
+        kwargs['ti'].xcom_pull(task_ids='p1_lr'),
+        kwargs['ti'].xcom_pull(task_ids='p1_svm'),
+        kwargs['ti'].xcom_pull(task_ids='p2_lr'),
+        kwargs['ti'].xcom_pull(task_ids='p2_svm'),
+        kwargs['ti'].xcom_pull(task_ids='merge_lr'),
+        kwargs['ti'].xcom_pull(task_ids='merge_svm'),
     ]
 
-    # Print all the models and their accuracies
-    for model in model_accuracies:
-        cprint(f"Model: {model['model']} - Accuracy: {model['accuracy']}")
+    # Convert the model accuracies to a DataFrame
+    model_accuracies_df = pd.DataFrame(model_accuracies, columns=["Model", "Accuracy"])
 
-    # Select the largest accuracy (second element in the tuple)
-    best_model = max(model_accuracies, key=lambda x: x['accuracy'])
-
-    # Print the best model
-    cprint(f"The best model is: {best_model['model']} with an accuracy of {best_model['accuracy']}")
+    # Select the best model
+    best_model = model_accuracies_df.loc[model_accuracies_df["Accuracy"].idxmax()]
 
     # Return the best model
     return best_model
-
 
 ########################################################################################
 # Dags
